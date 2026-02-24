@@ -8,6 +8,7 @@
 !tsconfig.build.json
 !nest-cli.json
 !jest.config.ts
+!prisma.config.ts
 !prisma/
 !prisma/**
 prisma/dev.db
