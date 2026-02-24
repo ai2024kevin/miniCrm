@@ -17,6 +17,7 @@ const resolvePort = (): number => {
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
   const port = resolvePort();
   await app.listen(port);
 }
