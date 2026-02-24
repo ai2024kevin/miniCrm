@@ -59,6 +59,22 @@ export class PersistenceService {
     return { session, message, plan };
   }
 
+  public async saveAssistantMessage(input: {
+    sessionId: string;
+    chatId: string;
+    text: string;
+  }): Promise<void> {
+    await this.prisma.message.create({
+      data: {
+        telegramChatId: input.chatId,
+        telegramUpdateId: Date.now(),
+        role: 'assistant',
+        text: input.text,
+        sessionId: input.sessionId,
+      },
+    });
+  }
+
   public async getRecentSessionMessages(
     sessionId: string,
     limit = 20,

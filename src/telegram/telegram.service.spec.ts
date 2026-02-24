@@ -10,8 +10,8 @@ describe('TelegramService', () => {
     const config = {
       get: jest.fn().mockReturnValue('token'),
     } as unknown as ConfigService;
-    const persistenceService = {
-      saveIncomingMessage: jest.fn().mockResolvedValue(undefined),
+    const chatOrchestrator = {
+      processInbound: jest.fn().mockResolvedValue('reply'),
     };
 
     class TestTelegramService extends TelegramService {
@@ -20,7 +20,7 @@ describe('TelegramService', () => {
       }
     }
 
-    const service = new TestTelegramService(config, persistenceService as never);
+    const service = new TestTelegramService(config, chatOrchestrator as never);
 
     service.onModuleInit();
     await service.onModuleDestroy();

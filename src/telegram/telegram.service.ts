@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import TelegramBot from 'node-telegram-bot-api';
-import { PersistenceService } from '../persistence/persistence.service';
+import { ChatOrchestratorService } from '../chat/chat-orchestrator.service';
 
 type TextUpdate = {
   chat: { id: string | number };
@@ -17,7 +17,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
   public constructor(
     private readonly configService: ConfigService,
-    private readonly persistenceService: PersistenceService,
+    private readonly chatOrchestrator: ChatOrchestratorService,
   ) {}
 
   public onModuleInit(): void {
@@ -43,7 +43,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       const chatId = String(message.chat.id);
       const userId = message.from?.id ? String(message.from.id) : undefined;
 
-      await this.persistenceService.saveIncomingMessage({
+      const reply = await this.chatOrchestrator.processInbound({
         chatId,
         updateId: message.message_id,
         messageId: message.message_id,
@@ -51,7 +51,9 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         text: message.text ?? '',
       });
 
-      this.logger.log(`Inbound text message chatId=${chatId}`);
+      await this.bot?.sendMessage(chatId, reply);
+
+      this.logger.log(`Inbound text handled chatId=${chatId}`);
     } catch (error) {
       const normalized = error instanceof Error ? error.message : 'unknown error';
       this.logger.error(`Inbound handler failed: ${normalized}`);

@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { AiModule } from './ai/ai.module';
+import { ChatOrchestratorService } from './chat/chat-orchestrator.service';
 import { ConfigModule } from '@nestjs/config';
 import { HealthController } from './health/health.controller';
 import { PersistenceModule } from './persistence/persistence.module';
@@ -8,10 +10,12 @@ import { TelegramModule } from './telegram/telegram.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    AiModule,
     PrismaModule,
     PersistenceModule,
     TelegramModule,
   ],
   controllers: [HealthController],
+  providers: [ChatOrchestratorService],
 })
 export class AppModule {}
