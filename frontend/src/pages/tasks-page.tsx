@@ -43,7 +43,14 @@ export function TasksPage() {
     setRows(tasks);
     setClients(clientsData);
     setDeals(dealsData);
-    setSelectedId((current) => current ?? tasks[0]?.id ?? null);
+    setSelectedId((current) => {
+      if (current === null) {
+        return tasks[0]?.id ?? null;
+      }
+
+      const hasCurrentSelection = tasks.some((row) => row.id === current);
+      return hasCurrentSelection ? current : (tasks[0]?.id ?? null);
+    });
   }
 
   useEffect(() => {

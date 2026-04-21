@@ -33,7 +33,14 @@ export function ClientsPage() {
   async function loadClients() {
     const data = await api.get<Client[]>('/clients');
     setRows(data);
-    setSelectedId((current) => current ?? data[0]?.id ?? null);
+    setSelectedId((current) => {
+      if (current === null) {
+        return data[0]?.id ?? null;
+      }
+
+      const hasCurrentSelection = data.some((row) => row.id === current);
+      return hasCurrentSelection ? current : (data[0]?.id ?? null);
+    });
   }
 
   useEffect(() => {

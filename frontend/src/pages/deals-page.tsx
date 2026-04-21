@@ -28,13 +28,22 @@ export function DealsPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState<DealForm>(initialForm);
 
+  const amount = Number(form.amount);
+  const isAmountValid = form.amount.trim() !== '' && Number.isFinite(amount) && amount >= 0;
   const selected = useMemo(() => rows.find((row) => row.id === selectedId) ?? null, [rows, selectedId]);
 
   async function loadData() {
     const [deals, clientsData] = await Promise.all([api.get<Deal[]>('/deals'), api.get<Client[]>('/clients')]);
     setRows(deals);
     setClients(clientsData);
-    setSelectedId((current) => current ?? deals[0]?.id ?? null);
+    setSelectedId((current) => {
+      if (current === null) {
+        return deals[0]?.id ?? null;
+      }
+
+      const hasCurrentSelection = deals.some((row) => row.id === current);
+      return hasCurrentSelection ? current : (deals[0]?.id ?? null);
+    });
   }
 
   useEffect(() => {
@@ -44,13 +53,16 @@ export function DealsPage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!isAmountValid) {
+      return;
+    }
+
     const clientId = Number(form.client_id);
-    const amount = Number(form.amount);
 
     const payload = {
       client_id: Number.isFinite(clientId) && clientId > 0 ? clientId : null,
       title: form.title,
-      amount: Number.isFinite(amount) ? amount : 0,
+      amount,
       stage: form.stage,
       comment: form.comment || null,
       close_date: null,
@@ -156,8 +168,12 @@ export function DealsPage() {
               value={form.amount}
               onChange={(event) => setForm((prev) => ({ ...prev, amount: event.target.value }))}
               placeholder="Сумма"
+              aria-invalid={!isAmountValid && form.amount.trim() !== ''}
               className="w-full rounded-lg border border-slate-300 px-3 py-2"
             />
+            {!isAmountValid && form.amount.trim() !== '' ? (
+              <p className="text-sm text-rose-600">Введите корректную сумму сделки.</p>
+            ) : null}
             <select
               value={form.stage}
               onChange={(event) => setForm((prev) => ({ ...prev, stage: event.target.value as Deal['stage'] }))}
@@ -174,7 +190,11 @@ export function DealsPage() {
               placeholder="Комментарий"
               className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2"
             />
-            <button type="submit" className="rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800">
+            <button
+              type="submit"
+              disabled={!isAmountValid}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+            >
               Сохранить
             </button>
           </form>
