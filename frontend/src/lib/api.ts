@@ -1,21 +1,40 @@
 export function buildUrl(path: string) {
-  return `/api${path}`;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (normalizedPath === "/api" || normalizedPath.startsWith("/api/")) {
+    return normalizedPath;
+  }
+
+  return `/api${normalizedPath}`;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+
+  if (init?.body !== undefined && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const response = await fetch(buildUrl(path), {
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
     ...init,
+    headers,
   });
 
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
 
-  return response.json() as Promise<T>;
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await response.text();
+
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 }
 
 export const api = {
