@@ -1,13 +1,16 @@
+import type { Ref } from 'react';
+
 type DetailsDialogProps = {
   title: string;
   subtitle?: string;
   comment?: string | null;
   fields?: Array<{ label: string; value: string }>;
+  sectionRef?: Ref<HTMLElement>;
 };
 
-export function DetailsDialog({ title, subtitle, comment, fields = [] }: DetailsDialogProps) {
+export function DetailsDialog({ title, subtitle, comment, fields = [], sectionRef }: DetailsDialogProps) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6">
+    <section ref={sectionRef} className="rounded-xl border border-slate-200 bg-white p-6">
       <h3 className="mb-2 text-lg font-semibold text-slate-900">Комментарий и карточка</h3>
       <p className="mb-4 text-sm text-slate-500">{subtitle ?? title}</p>
 

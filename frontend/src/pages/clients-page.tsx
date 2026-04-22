@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { DetailsDialog } from '@/components/records/details-dialog';
 import { DeleteRecordDialog } from '@/components/records/delete-record-dialog';
 import { RecordTable } from '@/components/records/record-table';
@@ -27,8 +27,20 @@ export function ClientsPage() {
   const [rows, setRows] = useState<Client[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState<ClientForm>(initialForm);
+  const detailsRef = useRef<HTMLElement | null>(null);
+  const shouldScrollRef = useRef(false);
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedId) ?? null, [rows, selectedId]);
+
+  function selectRow(id: number) {
+    if (selectedId === id) {
+      detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    shouldScrollRef.current = true;
+    setSelectedId(id);
+  }
 
   async function loadClients() {
     const data = await api.get<Client[]>('/clients');
@@ -46,6 +58,15 @@ export function ClientsPage() {
   useEffect(() => {
     void loadClients().catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (!selected || !shouldScrollRef.current) {
+      return;
+    }
+
+    detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    shouldScrollRef.current = false;
+  }, [selected]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,7 +96,7 @@ export function ClientsPage() {
       <div className="space-y-6">
         <RecordTable
           title="Список клиентов"
-          description="Прокручиваемая таблица со всеми клиентами CRM."
+          description=""
           rows={rows}
           columns={[
             { id: 'id', title: 'ID', cell: (row) => row.id },
@@ -86,7 +107,7 @@ export function ClientsPage() {
                 <button
                   type="button"
                   className="font-medium text-blue-700 hover:text-blue-800"
-                  onClick={() => setSelectedId(row.id)}
+                  onClick={() => selectRow(row.id)}
                 >
                   {row.name}
                 </button>
@@ -102,7 +123,7 @@ export function ClientsPage() {
                 <button
                   type="button"
                   className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100"
-                  onClick={() => setSelectedId(row.id)}
+                  onClick={() => selectRow(row.id)}
                 >
                   Открыть
                 </button>
@@ -112,6 +133,7 @@ export function ClientsPage() {
         />
 
         <DetailsDialog
+          sectionRef={detailsRef}
           title={selected ? `Клиент #${selected.id} — ${selected.name}` : 'Клиент не выбран'}
           subtitle="Детали выбранного клиента"
           comment={selected?.comment}

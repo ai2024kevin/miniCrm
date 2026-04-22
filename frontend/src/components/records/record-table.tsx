@@ -23,16 +23,16 @@ export function RecordTable<T extends { id: number }>({
   emptyText = 'Нет данных для отображения.',
 }: RecordTableProps<T>) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="mb-2 text-xl font-semibold text-slate-900">{title}</h2>
-      <p className="mb-4 text-sm text-slate-500">{description}</p>
+    <section className="rounded-xl border border-[#bfd0e8] bg-[#f4f8fc] p-6">
+      <h2 className="mb-2 text-xl font-semibold text-[#122033]">{title}</h2>
+      <p className="mb-4 text-sm text-[#6b85a6]">{description}</p>
 
-      <div className="max-h-[460px] overflow-auto rounded-lg border border-slate-200">
+      <div className="max-h-[460px] overflow-auto rounded-lg border border-[#d4dfee] bg-white">
         <table className="min-w-full border-collapse text-sm">
-          <thead className="sticky top-0 bg-slate-50">
+          <thead className="sticky top-0 bg-[#edf3fa]">
             <tr>
               {columns.map((column) => (
-                <th key={column.id} className="px-4 py-3 text-left font-medium text-slate-700">
+                <th key={column.id} className="px-4 py-3 text-left font-medium text-[#122033]">
                   {column.title}
                 </th>
               ))}
@@ -42,15 +42,15 @@ export function RecordTable<T extends { id: number }>({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td className="px-4 py-6 text-slate-500" colSpan={columns.length}>
+                <td className="px-4 py-6 text-[#6b85a6]" colSpan={columns.length}>
                   {emptyText}
                 </td>
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className="border-t border-slate-100">
+                <tr key={row.id} className="border-t border-[#d4dfee]">
                   {columns.map((column) => (
-                    <td key={column.id} className={`px-4 py-3 text-slate-700 ${column.className ?? ''}`}>
+                    <td key={column.id} className={`px-4 py-3 text-[#122033] ${column.className ?? ''}`}>
                       {column.cell(row)}
                     </td>
                   ))}

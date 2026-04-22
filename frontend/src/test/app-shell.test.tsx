@@ -18,6 +18,8 @@ describe('AppShell', () => {
 
     render(<RouterProvider router={router} />);
 
+    expect(screen.getAllByText('MiniCRM').length).toBeGreaterThan(0);
+    expect(screen.queryByText('minimal scaffold')).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Основная навигация' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Обзор' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Клиенты' })).toBeInTheDocument();
@@ -25,6 +27,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: 'Задачи' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Отчёты' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Настройки' })).toBeInTheDocument();
+    expect(screen.getByText('FastAPI + Vite frontend')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Обзор' })).toBeInTheDocument();
   });
 });

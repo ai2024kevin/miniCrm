@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { DetailsDialog } from '@/components/records/details-dialog';
 import { DeleteRecordDialog } from '@/components/records/delete-record-dialog';
 import { RecordTable } from '@/components/records/record-table';
@@ -30,8 +30,20 @@ export function TasksPage() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState<TaskForm>(initialForm);
+  const detailsRef = useRef<HTMLElement | null>(null);
+  const shouldScrollRef = useRef(false);
 
   const selected = useMemo(() => rows.find((row) => row.id === selectedId) ?? null, [rows, selectedId]);
+
+  function selectRow(id: number) {
+    if (selectedId === id) {
+      detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    shouldScrollRef.current = true;
+    setSelectedId(id);
+  }
 
   async function loadData() {
     const [tasks, clientsData, dealsData] = await Promise.all([
@@ -56,6 +68,15 @@ export function TasksPage() {
   useEffect(() => {
     void loadData().catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (!selected || !shouldScrollRef.current) {
+      return;
+    }
+
+    detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    shouldScrollRef.current = false;
+  }, [selected]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -89,7 +110,7 @@ export function TasksPage() {
       <div className="space-y-6">
         <RecordTable
           title="Список задач"
-          description="Прокручиваемая таблица со всеми задачами CRM."
+          description=""
           rows={rows}
           columns={[
             { id: 'id', title: 'ID', cell: (row) => row.id },
@@ -100,7 +121,7 @@ export function TasksPage() {
                 <button
                   type="button"
                   className="font-medium text-blue-700 hover:text-blue-800"
-                  onClick={() => setSelectedId(row.id)}
+                  onClick={() => selectRow(row.id)}
                 >
                   {row.title}
                 </button>
@@ -116,7 +137,7 @@ export function TasksPage() {
                 <button
                   type="button"
                   className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100"
-                  onClick={() => setSelectedId(row.id)}
+                  onClick={() => selectRow(row.id)}
                 >
                   Открыть
                 </button>
@@ -126,6 +147,7 @@ export function TasksPage() {
         />
 
         <DetailsDialog
+          sectionRef={detailsRef}
           title={selected ? `Задача #${selected.id} — ${selected.title}` : 'Задача не выбрана'}
           subtitle="Детали выбранной задачи"
           comment={selected?.description}

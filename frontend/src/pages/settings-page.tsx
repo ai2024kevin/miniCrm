@@ -70,11 +70,27 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Настройки</h1>
-        <p className="mt-1 text-sm text-slate-500">Google settings для выгрузки отчётов.</p>
+        <h1 className="text-2xl font-semibold text-slate-900">Настройки экспорта</h1>
+        <p className="mt-1 text-sm text-slate-500">Google settings для выгрузки отчётов в Google Sheets.</p>
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6">
+        <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">Где взять данные в Google</h2>
+              <p className="mt-1 text-sm text-slate-500">Короткая памятка по Spreadsheet ID, Folder ID и OAuth client JSON.</p>
+            </div>
+            <details className="max-w-xl text-sm text-slate-600">
+              <summary className="cursor-pointer list-none font-medium text-slate-700">Открыть инструкцию</summary>
+              <div className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                <p><strong>Spreadsheet ID</strong> — это часть URL Google Sheets между <code>/d/</code> и <code>/edit</code>.</p>
+                <p><strong>Folder ID</strong> — это часть URL папки Google Drive после <code>/folders/</code>.</p>
+                <p><strong>OAuth client JSON</strong> нужно скачать в Google Cloud Console для Desktop App и положить в проект.</p>
+              </div>
+            </details>
+          </div>
+        </div>
         {isLoading ? (
           <p className="text-sm text-slate-500">Загрузка...</p>
         ) : (

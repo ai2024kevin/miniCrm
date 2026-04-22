@@ -4,20 +4,36 @@ import type { ReportResult } from '@/types/crm';
 
 type ReportType = 'clients' | 'deals' | 'tasks';
 
-const reportOptions: { value: ReportType; label: string }[] = [
-  { value: 'clients', label: 'Клиенты' },
-  { value: 'deals', label: 'Сделки' },
-  { value: 'tasks', label: 'Задачи' },
+type ExportResult = ReportResult & {
+  reportType: ReportType;
+};
+
+const reportOptions: { value: ReportType; label: string; description: string }[] = [
+  { value: 'clients', label: 'Клиенты', description: 'Выгрузка списка клиентов с контактами, статусами и комментариями.' },
+  { value: 'deals', label: 'Сделки', description: 'Выгрузка текущих сделок с этапами, суммами и привязкой к клиентам.' },
+  { value: 'tasks', label: 'Задачи', description: 'Выгрузка задач команды со статусами, сроками и связями с CRM.' },
 ];
+
+function isValidReportResult(value: unknown): value is ReportResult {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      'url' in value &&
+      typeof value.url === 'string' &&
+      value.url.trim() &&
+      'title' in value &&
+      typeof value.title === 'string',
+  );
+}
 
 export function ReportsPage() {
   const [reportType, setReportType] = useState<ReportType>('clients');
-  const [result, setResult] = useState<ReportResult | null>(null);
+  const [result, setResult] = useState<ExportResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedLabel = useMemo(
-    () => reportOptions.find((option) => option.value === reportType)?.label ?? reportType,
+  const selectedOption = useMemo(
+    () => reportOptions.find((option) => option.value === reportType) ?? reportOptions[0],
     [reportType],
   );
 
@@ -27,11 +43,16 @@ export function ReportsPage() {
     setError(null);
 
     try {
-      const response = await api.post<ReportResult>(`/reports/${reportType}/export`, {});
-      setResult(response);
+      const response = await api.post<ReportResult>(`/reports/${reportType}`, {});
+
+      if (!isValidReportResult(response)) {
+        throw new Error('invalid report result');
+      }
+
+      setResult({ ...response, reportType });
     } catch {
       setResult(null);
-      setError('Не удалось выполнить выгрузку. Проверьте Google settings и попробуйте снова.');
+      setError('Не удалось выполнить выгрузку. Проверьте настройки экспорта и попробуйте снова.');
     } finally {
       setIsLoading(false);
     }
@@ -40,8 +61,8 @@ export function ReportsPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Отчёты</h1>
-        <p className="mt-1 text-sm text-slate-500">Выберите таблицу и запустите выгрузку в Google Sheets.</p>
+        <h1 className="text-2xl font-semibold text-slate-900">Экспорт в Google Sheets</h1>
+        <p className="mt-1 text-sm text-slate-500">Выберите таблицу, проверьте описание и запустите выгрузку в Google Sheets.</p>
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6">
@@ -50,7 +71,11 @@ export function ReportsPage() {
             <span className="text-sm font-medium text-slate-700">Таблица для выгрузки</span>
             <select
               value={reportType}
-              onChange={(event) => setReportType(event.target.value as ReportType)}
+              onChange={(event) => {
+                const nextType = event.target.value as ReportType;
+                setReportType(nextType);
+                setResult(null);
+              }}
               className="w-full rounded-lg border border-slate-300 px-3 py-2"
             >
               {reportOptions.map((option) => (
@@ -61,19 +86,23 @@ export function ReportsPage() {
             </select>
           </label>
 
+          <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">{selectedOption.description}</p>
+
           <button
             type="submit"
             disabled={isLoading}
             className="rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
           >
-            {isLoading ? 'Выгружаем...' : 'Выгрузить'}
+            {isLoading ? 'Выгружаем...' : 'Выгрузить в Google Sheets'}
           </button>
         </form>
       </section>
 
       {result ? (
         <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
-          <p className="font-medium">Готово: {selectedLabel}</p>
+          <p className="font-medium">
+            Готово: {reportOptions.find((option) => option.value === result.reportType)?.label ?? result.reportType}
+          </p>
           <a href={result.url} target="_blank" rel="noreferrer" className="mt-2 inline-block underline">
             Открыть таблицу
           </a>

@@ -5,6 +5,7 @@ import { DealsPage } from '@/pages/deals-page';
 import { TasksPage } from '@/pages/tasks-page';
 
 const fetchMock = vi.fn();
+const scrollIntoViewMock = vi.fn();
 
 function jsonResponse(body: unknown, status = 200) {
   return {
@@ -16,7 +17,12 @@ function jsonResponse(body: unknown, status = 200) {
 
 beforeEach(() => {
   fetchMock.mockReset();
+  scrollIntoViewMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: scrollIntoViewMock,
+  });
 });
 
 afterEach(() => {
@@ -47,6 +53,45 @@ describe('ClientsPage', () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith('/api/clients', expect.any(Object));
+    });
+  });
+
+  it('scrolls to client card after user selection', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse([
+        {
+          id: 1,
+          name: 'Анна Смирнова',
+          phone: null,
+          email: null,
+          company: 'Northwind',
+          status: 'active',
+          comment: null,
+          created_at: '2026-04-22T00:00:00Z',
+        },
+        {
+          id: 2,
+          name: 'Борис Лебедев',
+          phone: null,
+          email: null,
+          company: 'Skyline',
+          status: 'active',
+          comment: null,
+          created_at: '2026-04-22T00:00:00Z',
+        },
+      ]),
+    );
+
+    render(<ClientsPage />);
+
+    await screen.findByText('Борис Лебедев');
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Борис Лебедев' }));
+
+    expect(screen.getByText('Клиент #2 — Борис Лебедев')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
     });
   });
 
@@ -146,6 +191,60 @@ describe('DealsPage', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('scrolls to deal card after user selection', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 1,
+            client_id: 1,
+            title: 'Продление контракта',
+            amount: 150000,
+            stage: 'new',
+            comment: null,
+            close_date: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+          {
+            id: 2,
+            client_id: 1,
+            title: 'Апселл лицензий',
+            amount: 200000,
+            stage: 'in_progress',
+            comment: null,
+            close_date: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 1,
+            name: 'Анна Смирнова',
+            phone: null,
+            email: null,
+            company: 'Northwind',
+            status: 'active',
+            comment: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+        ]),
+      );
+
+    render(<DealsPage />);
+
+    await screen.findByText('Апселл лицензий');
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Апселл лицензий' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Сделка #2 — Апселл лицензий')).toBeInTheDocument();
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
   it('selects first remaining deal after deleting current selection', async () => {
     fetchMock
       .mockResolvedValueOnce(
@@ -234,6 +333,50 @@ describe('DealsPage', () => {
 });
 
 describe('TasksPage', () => {
+  it('scrolls to task card after user selection', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 7,
+            client_id: 1,
+            deal_id: 2,
+            title: 'Подготовить договор',
+            description: null,
+            status: 'todo',
+            is_done: false,
+            due_date: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+          {
+            id: 8,
+            client_id: 1,
+            deal_id: 2,
+            title: 'Отправить КП',
+            description: null,
+            status: 'doing',
+            is_done: false,
+            due_date: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([]));
+
+    render(<TasksPage />);
+
+    await screen.findByText('Отправить КП');
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Отправить КП' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Задача #8 — Отправить КП')).toBeInTheDocument();
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
   it('resets selection when deleting the last task', async () => {
     fetchMock
       .mockResolvedValueOnce(

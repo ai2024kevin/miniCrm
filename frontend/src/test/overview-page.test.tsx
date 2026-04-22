@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OverviewPage } from '@/pages/overview-page';
 
@@ -22,7 +22,26 @@ afterEach(() => {
 });
 
 describe('OverviewPage', () => {
-  it('рендерит заголовок, KPI и графики на основе данных CRM', async () => {
+  it('показывает loading и error states в палитре Cool Premium', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([], 500))
+      .mockResolvedValueOnce(jsonResponse([], 500))
+      .mockResolvedValueOnce(jsonResponse([], 500));
+
+    render(<OverviewPage />);
+
+    const loadingState = screen.getByText('Загрузка данных обзора...');
+    expect(loadingState).toHaveClass('border-[#bfd0e8]');
+    expect(loadingState).toHaveClass('bg-[#f4f8fc]');
+    expect(loadingState).toHaveClass('text-[#6b85a6]');
+
+    const errorState = await screen.findByText('Не удалось загрузить данные для обзора. Попробуйте обновить страницу.');
+    expect(errorState).toHaveClass('border-[#e7b4b4]');
+    expect(errorState).toHaveClass('bg-[#fff5f5]');
+    expect(errorState).toHaveClass('text-[#d64545]');
+  });
+
+  it('рендерит заголовок, KPI и таблицы на основе данных CRM', async () => {
     fetchMock
       .mockResolvedValueOnce(
         jsonResponse([
@@ -103,18 +122,127 @@ describe('OverviewPage', () => {
 
     expect(screen.getByRole('heading', { name: 'Обзор за последние 30 дней' })).toBeInTheDocument();
 
+    const periodSelector = screen.getByRole('group', { name: 'Период обзора' });
+    expect(periodSelector).toHaveClass('border-[#bfd0e8]');
+    expect(periodSelector).toHaveClass('bg-[#f4f8fc]');
+
+    const activePeriodButton = screen.getByRole('button', { name: '30 дней' });
+    expect(activePeriodButton).toHaveClass('bg-[#2563eb]');
+    expect(activePeriodButton).toHaveClass('text-white');
+
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith('/api/clients', expect.any(Object));
       expect(fetchMock).toHaveBeenCalledWith('/api/deals', expect.any(Object));
       expect(fetchMock).toHaveBeenCalledWith('/api/tasks', expect.any(Object));
     });
 
-    expect(screen.getByText('Клиенты')).toBeInTheDocument();
-    expect(screen.getByText('Сделки')).toBeInTheDocument();
-    expect(screen.getByText('Задачи')).toBeInTheDocument();
-    expect(screen.getByText('Выиграно сделок')).toBeInTheDocument();
+    const kpiRegion = screen.getByText('Выиграно сделок').closest('section');
+    expect(kpiRegion).not.toBeNull();
+    expect(within(kpiRegion as HTMLElement).getByText('Клиенты')).toBeInTheDocument();
+    expect(within(kpiRegion as HTMLElement).getByText('Сделки')).toBeInTheDocument();
+    expect(within(kpiRegion as HTMLElement).getByText('Задачи')).toBeInTheDocument();
+    expect(within(kpiRegion as HTMLElement).getByText('Выиграно сделок')).toBeInTheDocument();
 
     expect(screen.getByText('Воронка сделок')).toBeInTheDocument();
-    expect(screen.getByText('Статусы задач')).toBeInTheDocument();
+    expect(screen.getByText('Структура задач')).toBeInTheDocument();
+
+    const latestClientsSection = screen.getByRole('heading', { name: 'Последние клиенты' }).closest('section');
+    expect(latestClientsSection).not.toBeNull();
+    expect(latestClientsSection).toHaveClass('border-[#bfd0e8]');
+    expect(latestClientsSection).toHaveClass('bg-[#f4f8fc]');
+  });
+
+  it('применяет палитру Cool Premium к карточкам и акцентам графиков', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 1,
+            name: 'Анна Смирнова',
+            phone: null,
+            email: null,
+            company: 'Northwind',
+            status: 'active',
+            comment: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 1,
+            client_id: 1,
+            title: 'Продление контракта',
+            amount: 150000,
+            stage: 'won',
+            comment: null,
+            close_date: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 10,
+            client_id: 1,
+            deal_id: 1,
+            title: 'Подготовить договор',
+            description: null,
+            status: 'todo',
+            is_done: false,
+            due_date: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+          {
+            id: 11,
+            client_id: 1,
+            deal_id: 1,
+            title: 'Согласовать смету',
+            description: null,
+            status: 'doing',
+            is_done: false,
+            due_date: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+          {
+            id: 12,
+            client_id: 1,
+            deal_id: 1,
+            title: 'Подписать акт',
+            description: null,
+            status: 'done',
+            is_done: true,
+            due_date: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+        ]),
+      );
+
+    render(<OverviewPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Динамика новых записей' })).toBeInTheDocument();
+
+    const trendChartCard = screen.getByRole('heading', { name: 'Динамика новых записей' }).closest('section');
+    expect(trendChartCard).not.toBeNull();
+    expect(trendChartCard).toHaveClass('border-[#BFD0E8]');
+    expect(trendChartCard).toHaveClass('bg-[#F4F8FC]');
+
+    const trendSvg = screen.getByRole('img', { name: 'График динамики клиентов, сделок и задач' });
+    const trendSurface = trendSvg.closest('div');
+    expect(trendSurface).not.toBeNull();
+    expect(trendSurface).toHaveClass('border-[#D4DFEE]');
+    expect(trendSurface).toHaveClass('bg-[#DBEAFE]');
+
+    const donutChartCard = screen.getByRole('heading', { name: 'Структура задач' }).closest('section');
+    expect(donutChartCard).not.toBeNull();
+    expect(donutChartCard).toHaveClass('border-[#BFD0E8]');
+    expect(donutChartCard).toHaveClass('bg-[#F4F8FC]');
+
+    const todoLegendLabel = within(donutChartCard as HTMLElement).getByText('К выполнению');
+    const todoLegendDot = todoLegendLabel.parentElement?.querySelector('span[aria-hidden="true"]');
+    expect(todoLegendDot).not.toBeNull();
+    expect(todoLegendDot).toHaveStyle({ backgroundColor: '#1D3557' });
   });
 });
