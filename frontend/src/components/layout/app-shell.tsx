@@ -6,6 +6,7 @@ const navItems = [
   { to: '/deals', label: 'Сделки' },
   { to: '/tasks', label: 'Задачи' },
   { to: '/reports', label: 'Отчёты' },
+  { to: '/settings', label: 'Настройки' },
 ];
 
 export function AppShell() {
@@ -16,11 +17,8 @@ export function AppShell() {
           <strong className="text-sm tracking-wide">VPH03 CRM</strong>
           <span className="text-xs text-slate-500">minimal scaffold</span>
         </div>
-      </header>
-
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 px-4 py-4 md:grid-cols-[220px_1fr]">
-        <aside className="rounded-lg border border-slate-200 bg-white p-3">
-          <nav className="flex flex-col gap-1" aria-label="Основная навигация">
+        <div className="mx-auto max-w-6xl px-4 pb-3">
+          <nav className="flex flex-wrap gap-1" aria-label="Основная навигация">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -36,12 +34,14 @@ export function AppShell() {
               </NavLink>
             ))}
           </nav>
-        </aside>
+        </div>
+      </header>
 
-        <main className="rounded-lg border border-slate-200 bg-white p-6">
+      <main className="mx-auto max-w-6xl px-4 py-4">
+        <section className="rounded-lg border border-slate-200 bg-white p-6">
           <Outlet />
-        </main>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

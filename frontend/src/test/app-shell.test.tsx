@@ -24,6 +24,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: 'Сделки' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Задачи' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Отчёты' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Настройки' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Обзор' })).toBeInTheDocument();
   });
 });
