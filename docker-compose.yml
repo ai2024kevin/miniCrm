@@ -6,9 +6,9 @@ services:
     environment:
       PORT: 8000
       DATA_DIR: /app/data
-      CRM_LOGIN: ${CRM_LOGIN:-admin}
-      CRM_PASSWORD: ${CRM_PASSWORD:-admin123}
-      CRM_AUTH_TOKEN: ${CRM_AUTH_TOKEN:-change-me}
+      CRM_LOGIN: ${CRM_LOGIN:?CRM_LOGIN is required}
+      CRM_PASSWORD: ${CRM_PASSWORD:?CRM_PASSWORD is required}
+      CRM_AUTH_TOKEN: ${CRM_AUTH_TOKEN:?CRM_AUTH_TOKEN is required}
     ports:
       - "8000:8000"
     volumes:
