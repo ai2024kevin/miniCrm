@@ -1,5 +1,29 @@
 const AUTH_SESSION_KEY = 'crm_auth';
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+
+const LOCAL_API_HOST_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/i;
+
+function resolveBrowserHostname() {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  return window.location.hostname;
+}
+
+export function resolveApiBaseUrl(rawBaseUrl: string, browserHostname = resolveBrowserHostname()) {
+  const normalizedBaseUrl = rawBaseUrl.trim().replace(/\/$/, '');
+
+  if (!normalizedBaseUrl) {
+    return '';
+  }
+
+  const isRemoteBrowser = !!browserHostname && !['localhost', '127.0.0.1', '::1'].includes(browserHostname);
+  if (isRemoteBrowser && LOCAL_API_HOST_PATTERN.test(normalizedBaseUrl)) {
+    return '';
+  }
+
+  return normalizedBaseUrl;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -11,11 +35,11 @@ export class ApiError extends Error {
   }
 }
 
-export function buildUrl(path: string) {
+export function buildUrl(path: string, baseUrl = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL ?? '')) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const apiPath = normalizedPath === "/api" || normalizedPath.startsWith("/api/") ? normalizedPath : `/api${normalizedPath}`;
 
-  return apiBaseUrl ? `${apiBaseUrl}${apiPath}` : apiPath;
+  return baseUrl ? `${baseUrl}${apiPath}` : apiPath;
 }
 
 function parseErrorMessage(text: string, status: number): string {

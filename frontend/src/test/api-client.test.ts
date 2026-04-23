@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { api, buildUrl } from "@/lib/api";
+import { api, buildUrl, resolveApiBaseUrl } from "@/lib/api";
 
 beforeEach(() => {
   window.sessionStorage.clear();
@@ -9,11 +9,25 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe("resolveApiBaseUrl", () => {
+  it("drops localhost API base when the app is opened on a remote host", () => {
+    expect(resolveApiBaseUrl("http://localhost:8000", "crm.digitai.icu")).toBe("");
+  });
+
+  it("keeps localhost API base for local browser sessions", () => {
+    expect(resolveApiBaseUrl("http://localhost:8000", "localhost")).toBe("http://localhost:8000");
+  });
+});
+
 describe("buildUrl", () => {
   it("normalizes client paths before prefixing with /api", () => {
-    expect(buildUrl("/clients")).toBe("/api/clients");
-    expect(buildUrl("clients")).toBe("/api/clients");
-    expect(buildUrl("/api/clients")).toBe("/api/clients");
+    expect(buildUrl("/clients", "")).toBe("/api/clients");
+    expect(buildUrl("clients", "")).toBe("/api/clients");
+    expect(buildUrl("/api/clients", "")).toBe("/api/clients");
+  });
+
+  it("prefixes urls with the resolved API base when provided", () => {
+    expect(buildUrl("/clients", "https://api.example.com")).toBe("https://api.example.com/api/clients");
   });
 });
 
