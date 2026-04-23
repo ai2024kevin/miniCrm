@@ -266,5 +266,12 @@ describe('OverviewPage', () => {
     const todoLegendDot = todoLegendLabel.parentElement?.querySelector('span[aria-hidden="true"]');
     expect(todoLegendDot).not.toBeNull();
     expect(todoLegendDot).toHaveStyle({ backgroundColor: '#1D3557' });
+
+    const funnelChart = screen.getByTestId('horizontal-funnel-chart');
+    const lostStageLabel = within(funnelChart).getByText('Проиграны');
+    const lostStageBar = lostStageLabel.closest('div[class*="bg-[#1D3557]"]') ?? lostStageLabel.parentElement;
+    const lostStageValue = within(lostStageBar as HTMLElement).getByText('0');
+    expect(lostStageLabel).toHaveClass('text-white');
+    expect(lostStageValue).toHaveClass('text-white');
   });
 });

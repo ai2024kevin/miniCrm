@@ -232,8 +232,8 @@ export function StageFunnelCards({ data }: { data: StageDatum[] }) {
                     className="flex h-full items-center justify-between rounded-full bg-[#1D3557] px-3"
                     style={{ width: `${width}%` }}
                   >
-                    <span className={`truncate text-xs font-medium ${isDarkFill ? 'text-white' : 'text-[#122033]'}`}>{item.label}</span>
-                    <span className={`ml-3 shrink-0 text-xs font-semibold ${isDarkFill ? 'text-white' : 'text-[#122033]'}`}>
+                    <span className="truncate text-xs font-medium text-white">{item.label}</span>
+                    <span className="ml-3 shrink-0 text-xs font-semibold text-white">
                       {item.value}
                     </span>
                   </div>
