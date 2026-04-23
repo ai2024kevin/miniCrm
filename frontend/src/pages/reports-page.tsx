@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from 'react';
-import { api } from '@/lib/api';
+import { ApiError, api } from '@/lib/api';
 import type { ReportResult } from '@/types/crm';
 
 type ReportType = 'clients' | 'deals' | 'tasks';
@@ -21,9 +21,18 @@ function isValidReportResult(value: unknown): value is ReportResult {
       'url' in value &&
       typeof value.url === 'string' &&
       value.url.trim() &&
+      !value.url.includes('example.local') &&
       'title' in value &&
       typeof value.title === 'string',
   );
+}
+
+function toUserErrorMessage(error: unknown): string {
+  if (error instanceof ApiError && error.message.trim()) {
+    return error.message;
+  }
+
+  return 'Не удалось выполнить выгрузку. Проверьте настройки экспорта и попробуйте снова.';
 }
 
 export function ReportsPage() {
@@ -50,9 +59,9 @@ export function ReportsPage() {
       }
 
       setResult({ ...response, reportType });
-    } catch {
+    } catch (error) {
       setResult(null);
-      setError('Не удалось выполнить выгрузку. Проверьте настройки экспорта и попробуйте снова.');
+      setError(toUserErrorMessage(error));
     } finally {
       setIsLoading(false);
     }

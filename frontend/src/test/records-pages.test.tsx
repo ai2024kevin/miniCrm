@@ -377,6 +377,109 @@ describe('TasksPage', () => {
     });
   });
 
+  it('sends due_date from the date field when creating a task', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 1,
+            name: 'Анна Смирнова',
+            phone: null,
+            email: null,
+            company: 'Northwind',
+            status: 'active',
+            comment: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 2,
+            client_id: 1,
+            title: 'Продление контракта',
+            amount: 150000,
+            stage: 'new',
+            comment: null,
+            close_date: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: 8,
+          client_id: 1,
+          deal_id: 2,
+          title: 'Подготовить договор',
+          description: 'Проверить дату',
+          status: 'doing',
+          is_done: false,
+          due_date: '2026-04-24T00:00:00.000Z',
+          created_at: '2026-04-23T00:00:00Z',
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 1,
+            name: 'Анна Смирнова',
+            phone: null,
+            email: null,
+            company: 'Northwind',
+            status: 'active',
+            comment: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 2,
+            client_id: 1,
+            title: 'Продление контракта',
+            amount: 150000,
+            stage: 'new',
+            comment: null,
+            close_date: null,
+            created_at: '2026-04-22T00:00:00Z',
+          },
+        ]),
+      );
+
+    render(<TasksPage />);
+
+    await screen.findByRole('heading', { name: 'Добавить задачу' });
+
+    const taskSelects = screen.getAllByRole('combobox');
+    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement | null;
+
+    expect(dateInput).not.toBeNull();
+
+    fireEvent.change(taskSelects[0], { target: { value: '1' } });
+    fireEvent.change(taskSelects[1], { target: { value: '2' } });
+    fireEvent.change(screen.getByPlaceholderText('Название задачи'), { target: { value: 'Подготовить договор' } });
+    fireEvent.change(screen.getByPlaceholderText('Описание'), { target: { value: 'Проверить дату' } });
+    fireEvent.change(taskSelects[2], { target: { value: 'doing' } });
+    fireEvent.change(dateInput as HTMLInputElement, { target: { value: '2026-04-24' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить' }));
+
+    await waitFor(() => {
+      const taskCreateCall = fetchMock.mock.calls.find(([path, init]) => path === '/api/tasks' && init?.method === 'POST');
+
+      expect(taskCreateCall).toBeDefined();
+      expect(JSON.parse(String(taskCreateCall?.[1]?.body))).toEqual(
+        expect.objectContaining({
+          due_date: '2026-04-24T00:00:00.000Z',
+        }),
+      );
+    });
+  });
+
   it('resets selection when deleting the last task', async () => {
     fetchMock
       .mockResolvedValueOnce(

@@ -41,21 +41,36 @@ export function ChartCard({ title, description, children }: ChartCardProps) {
   );
 }
 
-function buildPolyline(values: number[], maxValue: number) {
-  const width = 100;
-  const height = 44;
+const TREND_CHART = {
+  width: 360,
+  height: 192,
+  paddingTop: 14,
+  paddingRight: 8,
+  paddingBottom: 18,
+  paddingLeft: 8,
+  yTicks: 4,
+} as const;
 
-  if (values.length < 2) {
+function getTrendCoordinates(values: number[], maxValue: number) {
+  const plotWidth = TREND_CHART.width - TREND_CHART.paddingLeft - TREND_CHART.paddingRight;
+  const plotHeight = TREND_CHART.height - TREND_CHART.paddingTop - TREND_CHART.paddingBottom;
+
+  return values.map((value, index) => {
+    const x = values.length === 1
+      ? TREND_CHART.paddingLeft
+      : TREND_CHART.paddingLeft + (index / (values.length - 1)) * plotWidth;
+    const y = TREND_CHART.paddingTop + plotHeight - (value / maxValue) * plotHeight;
+
+    return { x, y, value };
+  });
+}
+
+function buildPolyline(points: Array<{ x: number; y: number }>) {
+  if (points.length < 2) {
     return '';
   }
 
-  return values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * width;
-      const y = height - (value / maxValue) * height;
-      return `${x},${y}`;
-    })
-    .join(' ');
+  return points.map((point) => `${point.x},${point.y}`).join(' ');
 }
 
 export function TrendLinesChart({ data, periodDays = 30 }: { data: TrendPoint[]; periodDays?: number }) {
@@ -66,21 +81,103 @@ export function TrendLinesChart({ data, periodDays = 30 }: { data: TrendPoint[];
     1,
   );
 
-  const clientsPoints = useMemo(() => buildPolyline(data.map((point) => point.clients), maxValue), [data, maxValue]);
-  const dealsPoints = useMemo(() => buildPolyline(data.map((point) => point.deals), maxValue), [data, maxValue]);
-  const tasksPoints = useMemo(() => buildPolyline(data.map((point) => point.tasks), maxValue), [data, maxValue]);
+  const yAxisLabels = useMemo(
+    () => Array.from({ length: TREND_CHART.yTicks + 1 }, (_, index) => Math.round((maxValue / TREND_CHART.yTicks) * (TREND_CHART.yTicks - index))),
+    [maxValue],
+  );
+  const clientsCoordinates = useMemo(() => getTrendCoordinates(data.map((point) => point.clients), maxValue), [data, maxValue]);
+  const dealsCoordinates = useMemo(() => getTrendCoordinates(data.map((point) => point.deals), maxValue), [data, maxValue]);
+  const tasksCoordinates = useMemo(() => getTrendCoordinates(data.map((point) => point.tasks), maxValue), [data, maxValue]);
+  const clientsPoints = useMemo(() => buildPolyline(clientsCoordinates), [clientsCoordinates]);
+  const dealsPoints = useMemo(() => buildPolyline(dealsCoordinates), [dealsCoordinates]);
+  const tasksPoints = useMemo(() => buildPolyline(tasksCoordinates), [tasksCoordinates]);
+  const plotWidth = TREND_CHART.width - TREND_CHART.paddingLeft - TREND_CHART.paddingRight;
+  const plotHeight = TREND_CHART.height - TREND_CHART.paddingTop - TREND_CHART.paddingBottom;
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#D4DFEE] bg-[#DBEAFE] p-4">
+      <div className="space-y-3 rounded-[28px] border border-[#D4DFEE] bg-[linear-gradient(180deg,#EAF3FF_0%,#F8FBFF_100%)] px-3 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:px-4">
         {hasData ? (
-          <svg viewBox="0 0 100 44" className="h-36 w-full" role="img" aria-label="График динамики клиентов, сделок и задач">
-            <polyline points={clientsPoints} fill="none" stroke={SERIES_COLORS.clients} strokeWidth="1.8" strokeLinecap="round" />
-            <polyline points={dealsPoints} fill="none" stroke={SERIES_COLORS.deals} strokeWidth="1.8" strokeLinecap="round" />
-            <polyline points={tasksPoints} fill="none" stroke={SERIES_COLORS.tasks} strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
+          <>
+            <div className="overflow-hidden rounded-[22px] border border-white/70 bg-[#FDFEFF] px-0 py-2 shadow-sm">
+              <svg
+                viewBox={`0 0 ${TREND_CHART.width} ${TREND_CHART.height}`}
+                preserveAspectRatio="none"
+                className="h-60 w-full"
+                role="img"
+                aria-label="График динамики клиентов, сделок и задач"
+              >
+                {yAxisLabels.map((label, index) => {
+                  const y = TREND_CHART.paddingTop + (plotHeight / TREND_CHART.yTicks) * index;
+                  const isBaseline = index === TREND_CHART.yTicks;
+
+                  return (
+                    <g key={`grid-${label}-${index}`}>
+                      <line
+                        x1={TREND_CHART.paddingLeft}
+                        y1={y}
+                        x2={TREND_CHART.width - TREND_CHART.paddingRight}
+                        y2={y}
+                        stroke={isBaseline ? '#7F9BC2' : '#D8E4F2'}
+                        strokeWidth={isBaseline ? 1.8 : 1}
+                        strokeDasharray={isBaseline ? undefined : '5 5'}
+                      />
+                      <text x="8" y={y - 6} textAnchor="start" fontSize="11" fill="#58769B">
+                        {label}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {data.map((point, index) => {
+                  const x = data.length === 1
+                    ? TREND_CHART.paddingLeft
+                    : TREND_CHART.paddingLeft + (index / (data.length - 1)) * plotWidth;
+
+                  return (
+                    <line
+                      key={point.label}
+                      x1={x}
+                      y1={TREND_CHART.paddingTop}
+                      x2={x}
+                      y2={TREND_CHART.paddingTop + plotHeight}
+                      stroke="#E4EDF8"
+                      strokeWidth="1"
+                    />
+                  );
+                })}
+
+                <polyline points={clientsPoints} fill="none" stroke={SERIES_COLORS.clients} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                <polyline points={dealsPoints} fill="none" stroke={SERIES_COLORS.deals} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                <polyline points={tasksPoints} fill="none" stroke={SERIES_COLORS.tasks} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                {[
+                  { key: 'clients', points: clientsCoordinates, color: SERIES_COLORS.clients },
+                  { key: 'deals', points: dealsCoordinates, color: SERIES_COLORS.deals },
+                  { key: 'tasks', points: tasksCoordinates, color: SERIES_COLORS.tasks },
+                ].flatMap((series) =>
+                  series.points.map((point, index) => (
+                    <g key={`${series.key}-${index}`}>
+                      <circle cx={point.x} cy={point.y} r="5" fill="white" stroke={series.color} strokeWidth="2.5" />
+                      <circle cx={point.x} cy={point.y} r="2" fill={series.color} />
+                    </g>
+                  )),
+                )}
+              </svg>
+            </div>
+
+            <div className="grid grid-cols-5 gap-2 text-center text-[11px] font-medium text-[#58769B]">
+              {data.map((point) => (
+                <div key={point.label} className="rounded-full bg-white/80 px-2 py-1 shadow-sm">
+                  {point.label}
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
-          <div className="flex h-36 items-center justify-center text-sm text-[#6B85A6]">Нет новых записей за последние {periodDays} дней.</div>
+          <div className="flex h-60 items-center justify-center rounded-[22px] border border-white/70 bg-[#FDFEFF] text-sm text-[#6B85A6]">
+            Нет новых записей за последние {periodDays} дней.
+          </div>
         )}
       </div>
 
@@ -89,7 +186,6 @@ export function TrendLinesChart({ data, periodDays = 30 }: { data: TrendPoint[];
         <LegendItem label="Сделки" color={SERIES_COLORS.deals} />
         <LegendItem label="Задачи" color={SERIES_COLORS.tasks} />
       </div>
-
     </div>
   );
 }

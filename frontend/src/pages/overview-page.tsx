@@ -166,8 +166,9 @@ export function OverviewPage() {
   }, [tasksInWindow]);
 
   const trendData = useMemo(() => {
-    const bucketCount = 5;
-    const bucketSize = Math.max(1, Math.ceil(periodDays / bucketCount));
+    const targetBucketCount = 5;
+    const bucketSize = Math.max(1, Math.ceil(periodDays / targetBucketCount));
+    const bucketCount = Math.ceil(periodDays / bucketSize);
     const points = Array.from({ length: bucketCount }, (_, index) => ({
       label: getDayBucketLabel(index, bucketSize, periodDays),
       clients: 0,

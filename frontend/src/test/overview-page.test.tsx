@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OverviewPage } from '@/pages/overview-page';
 
@@ -231,9 +231,31 @@ describe('OverviewPage', () => {
 
     const trendSvg = screen.getByRole('img', { name: 'График динамики клиентов, сделок и задач' });
     const trendSurface = trendSvg.closest('div');
+    const trendPanel = trendSurface?.parentElement;
+    expect(trendPanel).not.toBeNull();
+    expect(trendPanel).toHaveClass('border-[#D4DFEE]');
+    expect(trendPanel).toHaveClass('bg-[linear-gradient(180deg,#EAF3FF_0%,#F8FBFF_100%)]');
+
     expect(trendSurface).not.toBeNull();
-    expect(trendSurface).toHaveClass('border-[#D4DFEE]');
-    expect(trendSurface).toHaveClass('bg-[#DBEAFE]');
+    expect(trendSurface).toHaveClass('bg-[#FDFEFF]');
+    expect(trendSurface).toHaveClass('border-white/70');
+
+    expect(within(trendSurface as HTMLElement).getByText('0')).toBeInTheDocument();
+    expect(trendSvg.querySelectorAll('polyline')).toHaveLength(3);
+    expect(trendSvg.querySelectorAll('circle')).toHaveLength(30);
+    expect(trendSvg.querySelectorAll('line').length).toBeGreaterThanOrEqual(10);
+
+    const bucketLabels = ['1-6 дн.', '7-12 дн.', '13-18 дн.', '19-24 дн.', '25-30 дн.'];
+    bucketLabels.forEach((label) => {
+      expect(within(trendPanel as HTMLElement).getByText(label)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '7 дней' }));
+
+    ['1-2 дн.', '3-4 дн.', '5-6 дн.', '7-7 дн.'].forEach((label) => {
+      expect(within(trendPanel as HTMLElement).getByText(label)).toBeInTheDocument();
+    });
+    expect(within(trendPanel as HTMLElement).queryByText('9-7 дн.')).not.toBeInTheDocument();
 
     const donutChartCard = screen.getByRole('heading', { name: 'Структура задач' }).closest('section');
     expect(donutChartCard).not.toBeNull();

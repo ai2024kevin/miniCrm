@@ -91,7 +91,7 @@ export function TasksPage() {
       description: form.description || null,
       status: form.status,
       is_done: form.status === 'done',
-      due_date: form.due_date || null,
+      due_date: form.due_date ? new Date(`${form.due_date}T00:00:00.000Z`).toISOString() : null,
     };
 
     await api.post<Task>('/tasks', payload);

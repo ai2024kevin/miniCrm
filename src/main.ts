@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
@@ -11,13 +12,23 @@ const resolvePort = (): number => {
     }
   }
 
-  const envPort = Number(process.env.PORT ?? '3000');
-  return Number.isNaN(envPort) ? 3000 : envPort;
+  const envPort = Number(process.env.PORT ?? '8000');
+  return Number.isNaN(envPort) ? 8000 : envPort;
 };
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
+  app.enableCors();
+  app.setGlobalPrefix('api', {
+    exclude: ['health'],
+  });
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+    }),
+  );
   const port = resolvePort();
   await app.listen(port);
 }

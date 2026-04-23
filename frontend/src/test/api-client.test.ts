@@ -1,5 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api, buildUrl } from "@/lib/api";
+
+beforeEach(() => {
+  window.sessionStorage.clear();
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -64,6 +68,23 @@ describe("api client", () => {
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const headers = new Headers(init.headers);
     expect(headers.get("Content-Type")).toBe("application/json");
+  });
+
+  it("adds Authorization header when session token exists", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: vi.fn().mockResolvedValue('{"items":[]}'),
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+    window.sessionStorage.setItem("crm_auth", "auth-token-123");
+
+    await api.get<{ items: unknown[] }>("clients");
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = new Headers(init.headers);
+    expect(headers.get("Authorization")).toBe("Bearer auth-token-123");
   });
 
   it("returns undefined for 204 responses without parsing JSON", async () => {
